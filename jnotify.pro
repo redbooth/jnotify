@@ -3,12 +3,10 @@ TEMPLATE = lib
 CONFIG -= qt
 TARGET = aerofsjn
 
-#QMAKE_CXX_FLAGS += -D_FILE_OFFSET_BITS=64 -fmessage-length=0 -fno-rtti
-
 macx {
 	# separate SDKROOT optional
 	#SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk/
-	QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -fPIC -arch x86_64 -O3 -Wall
+	QMAKE_CFLAGS += -mmacosx-version-min=10.5 -fPIC -arch x86_64 -O3 -Wall
 	INCLUDEPATH += $$PWD/osx
 	INCLUDEPATH += "$$(SDKROOT)/System/Library/Frameworks/JavaVM.framework/Headers"
 	HEADERS += osx/net_contentobjects_jnotify_macosx_JNotify_macosx.h
@@ -17,7 +15,6 @@ macx {
 	LIBS += -framework CoreFoundation -framework CoreServices
 }
 win32 {
-	# TODO: complete/test
 	QMAKE_CXXFLAGS += -DUNICODE -D_UNICODE
 	INCLUDEPATH += $$PWD/win32
 	INCLUDEPATH += "$$(JAVA_HOME)\\include"
@@ -36,8 +33,7 @@ win32 {
 
 }
 linux-g++ {
-	# TODO: complete/test
-	#DEFINES += "_FILE_OFFSET_BITS=64"
+	DEFINES += "_FILE_OFFSET_BITS=64"
 	INCLUDEPATH += $$PWD/linux
 	INCLUDEPATH += "$$(JAVA_HOME)/include"
 	INCLUDEPATH += "$$(JAVA_HOME)/include/linux"
