@@ -114,7 +114,7 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_macosx_JNotify_1macosx_na
 
   // create the stream
   FSEventStreamContext context = {0, node, NULL, NULL, NULL};
-  node->stream = FSEventStreamCreate(NULL, &fsevent_callback, &context, paths, kFSEventStreamEventIdSinceNow, 1, kFSEventStreamCreateFlagNone);
+  node->stream = FSEventStreamCreate(NULL, &fsevent_callback, &context, paths, kFSEventStreamEventIdSinceNow, 1, kFSEventStreamCreateFlagIgnoreSelf);
   if (node->stream == NULL)
   {
     (*env)->ThrowNew(env, (*env)->FindClass(env, "net/contentobjects/jnotify/macosx/JNotifyException_macosx"), "Could not create stream");
