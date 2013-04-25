@@ -24,7 +24,7 @@ static void fsevent_callback
 {
   const char **cpaths = (const char **) eventPaths;
   struct listnode *node = (struct listnode *) userData;
-  int i;
+  size_t i;
   jstring jpath;
   jboolean recursive;
 
