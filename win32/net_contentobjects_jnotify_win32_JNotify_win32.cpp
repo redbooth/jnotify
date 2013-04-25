@@ -151,7 +151,7 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nati
 	env->ReleaseStringChars(path, (const jchar*)cstr);
 	if (watchId == 0)
 	{
-		return -error;
+		return -(jint)(error);
 	}
 	else
 	{
