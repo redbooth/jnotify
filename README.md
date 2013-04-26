@@ -10,3 +10,6 @@ To build:
 
 Your binaries are now in <code>build/</code>.  To clean, either <code>make clean</code>
 or just <code>rm -rf</code> the whole build folder and run the above command again.
+
+Note that at this time, we don't build the Java code; that should probably
+happen Soon™.
