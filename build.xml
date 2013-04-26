@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<project name="jnotify" default="build">
+    <description>
+        JNotify, a library for watching filesystems
+    </description>
+    <target name="prepare" depends="" description="setup folders">
+        <mkdir dir="build"/>
+    </target>
+    <target name="build" depends="prepare" description="build JNotify java code">
+        <javac sourcepath="" destdir="build" includeAntRuntime="false"
+            includeJavaRuntime="false" debug="on" debuglevel="lines,source">
+            <compilerarg value="-Werror"/>
+            <compilerarg value="-Xlint:all"/>
+            <src path="java"/>
+        </javac>
+    </target>
+    <target name="build_libraries" depends="prepare" description="build native library for the current platform">
+        <exec executable="qmake" dir="build">
+            <arg value="../jnotify.pro"/>
+        </exec>
+        <exec executable="make" dir="build">
+        </exec>
+    </target>
+    <target name="clean" depends="" description="clean build artifacts">
+        <delete dir="build"/>
+    </target>
+</project>
