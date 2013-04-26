@@ -211,7 +211,7 @@ public class JNotifyAdapterLinux implements IJNotify
 		{
 			if (_id2Data.containsKey(Integer.valueOf(wd)))
 			{
-				WatchData watchData = (WatchData) _id2Data.get(Integer.valueOf(wd));
+				WatchData watchData = _id2Data.get(Integer.valueOf(wd));
 				unwatch(watchData);
 				return true;
 			}
@@ -274,7 +274,7 @@ public class JNotifyAdapterLinux implements IJNotify
 		
 		synchronized (_id2Data)
 		{
-			Integer iwd = (Integer) _linuxWd2Wd.get(Integer.valueOf(linuxWd));
+			Integer iwd = _linuxWd2Wd.get(Integer.valueOf(linuxWd));
 			if (iwd == null)
 			{
 				// This happens if an exception is thrown because used too many watches.
