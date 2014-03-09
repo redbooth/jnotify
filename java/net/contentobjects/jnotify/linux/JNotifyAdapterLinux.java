@@ -45,7 +45,6 @@ import net.contentobjects.jnotify.IJNotify;
 import net.contentobjects.jnotify.JNotify;
 import net.contentobjects.jnotify.JNotifyException;
 import net.contentobjects.jnotify.JNotifyListener;
-import net.contentobjects.jnotify.Util;
 
 
 /** TODO : added by omry at Dec 11, 2005 : Handle move events*/
@@ -86,9 +85,6 @@ public class JNotifyAdapterLinux implements IJNotify
 	public int addWatch(String path, int mask, boolean watchSubtree, JNotifyListener listener)
 		throws JNotifyException
 	{
-		JNotify_linux.debug("JNotifyAdapterLinux.addWatch(path="+path+",mask="+Util.getMaskDesc(mask)+", watchSubtree="+watchSubtree+")");
-		
-		
 		// map mask to linux inotify mask.
 		int linuxMask = 0;
 		if ((mask & JNotify.FILE_CREATED) != 0)
@@ -183,7 +179,6 @@ public class JNotifyAdapterLinux implements IJNotify
 				catch (JNotifyException e)
 				{
 					if (e.getErrorCode() == JNotifyException.ERROR_WATCH_LIMIT_REACHED)
-						JNotify_linux.warn("JNotifyAdapterLinux.registerToSubTree : warning, failed to register " + root + " :" + e.getMessage());
 					{
 						throw e;
 					}
@@ -205,8 +200,6 @@ public class JNotifyAdapterLinux implements IJNotify
 
 	public boolean removeWatch(int wd) throws JNotifyException
 	{
-		JNotify_linux.debug("JNotifyAdapterLinux.removeWatch("+ wd+ ")");
-		
 		synchronized (_id2Data)
 		{
 			if (_id2Data.containsKey(Integer.valueOf(wd)))
@@ -265,13 +258,6 @@ public class JNotifyAdapterLinux implements IJNotify
 
 	protected void notifyChangeEvent(String name, int linuxWd, int linuxMask, int cookie)
 	{
-		
-		if (JNotify_linux.DEBUG)
-		{
-			debugLinux(name, linuxWd, linuxMask, cookie);
-		}
-		
-		
 		synchronized (_id2Data)
 		{
 			Integer iwd = _linuxWd2Wd.get(Integer.valueOf(linuxWd));
@@ -300,8 +286,6 @@ public class JNotifyAdapterLinux implements IJNotify
 						catch (JNotifyException e)
 						{
 							// ignore missing files while registering subtree, may have already been deleted
-							if (e.getErrorCode() != JNotifyException.ERROR_NO_SUCH_FILE_OR_DIRECTORY)
-								JNotify_linux.warn("registerToSubTree : warning, failed to register " + newRootFile + " :" + e.getMessage() + " code = " + e.getErrorCode());
 						}
 					}
 					
@@ -315,10 +299,6 @@ public class JNotifyAdapterLinux implements IJNotify
 						if (!_autoWatchesPaths.contains(newRootFile.getPath()))
 						{
 							watchData.notifyFileCreated(name);
-						}
-						else
-						{
-							JNotify_linux.debug("Assuming already sent event for " + newRootFile.getPath());
 						}
 					}
 				}
@@ -364,57 +344,6 @@ public class JNotifyAdapterLinux implements IJNotify
 				System.out.println("JNotifyAdapterLinux: warning, recieved event for an unregisted WD " +  iwd + ". ignoring...");
 			}
 		}
-	}
-
-	private void debugLinux(String name, int linuxWd, int linuxMask, int cookie)
-	{
-		boolean IN_ACCESS = (linuxMask & JNotify_linux.IN_ACCESS) != 0;
-		boolean IN_MODIFY = (linuxMask & JNotify_linux.IN_MODIFY) != 0;
-		boolean IN_ATTRIB = (linuxMask & JNotify_linux.IN_ATTRIB) != 0;
-		boolean IN_CLOSE_WRITE = (linuxMask & JNotify_linux.IN_CLOSE_WRITE) != 0;
-		boolean IN_CLOSE_NOWRITE = (linuxMask & JNotify_linux.IN_CLOSE_NOWRITE) != 0;
-		boolean IN_OPEN = (linuxMask & JNotify_linux.IN_OPEN) != 0;
-		boolean IN_MOVED_FROM = (linuxMask & JNotify_linux.IN_MOVED_FROM) != 0;
-		boolean IN_MOVED_TO = (linuxMask & JNotify_linux.IN_MOVED_TO) != 0;
-		boolean IN_CREATE = (linuxMask & JNotify_linux.IN_CREATE) != 0;
-		boolean IN_DELETE = (linuxMask & JNotify_linux.IN_DELETE) != 0;
-		boolean IN_DELETE_SELF = (linuxMask & JNotify_linux.IN_DELETE_SELF) != 0;
-		boolean IN_MOVE_SELF = (linuxMask & JNotify_linux.IN_MOVE_SELF) != 0;
-		boolean IN_UNMOUNT = (linuxMask & JNotify_linux.IN_UNMOUNT) != 0;
-		boolean IN_Q_OVERFLOW = (linuxMask & JNotify_linux.IN_Q_OVERFLOW) != 0;
-		boolean IN_IGNORED = (linuxMask & JNotify_linux.IN_IGNORED) != 0;
-		String s ="";
-		if (IN_ACCESS) s += "IN_ACCESS, ";
-		if (IN_MODIFY) s += "IN_MODIFY, ";
-		if (IN_ATTRIB) s += "IN_ATTRIB, ";
-		if (IN_CLOSE_WRITE) s += "IN_CLOSE_WRITE, ";
-		if (IN_CLOSE_NOWRITE) s += "IN_CLOSE_NOWRITE, ";
-		if (IN_OPEN) s += "IN_OPEN, ";
-		if (IN_MOVED_FROM) s += "IN_MOVED_FROM, ";
-		if (IN_MOVED_TO) s += "IN_MOVED_TO, ";
-		if (IN_CREATE) s += "IN_CREATE, ";
-		if (IN_DELETE) s += "IN_DELETE, ";
-		if (IN_DELETE_SELF) s += "IN_DELETE_SELF, ";
-		if (IN_MOVE_SELF) s += "IN_MOVE_SELF, ";
-		if (IN_UNMOUNT) s += "IN_UNMOUNT, ";
-		if (IN_Q_OVERFLOW) s += "IN_Q_OVERFLOW, ";
-		if (IN_IGNORED) s += "IN_IGNORED, ";
-		int wd = _linuxWd2Wd.get(Integer.valueOf(linuxWd)).intValue();
-		WatchData wdata = _id2Data.get(Integer.valueOf(wd));
-		String path;
-		if (wdata != null)
-		{
-			path = wdata._path;
-			if (path != null && name != "")
-			{
-				path += File.separator + name;
-			}
-		}
-		else
-		{
-			path = name;
-		}
-		JNotify_linux.debug("Linux event : wd=" + linuxWd + " | " + s + " path: " + path + (cookie != 0 ? ", cookie=" + cookie : ""));
 	}
 
 	private static class WatchData

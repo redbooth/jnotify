@@ -26,12 +26,6 @@ public class JNotifyAdapterMacOSX implements IJNotify
 		int deviceid;
 		long inode;
 
-		// load the stat function
-		static
-		{
-			System.loadLibrary("jnotify"); //$NON-NLS-1$
-		}
-
 		JNFile(File f) throws IOException
 		{
 			mtime = f.lastModified();
