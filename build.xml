@@ -13,6 +13,8 @@
             <compilerarg value="-Xlint:all"/>
             <src path="java"/>
         </javac>
+        <jar destfile="build/aerofsjn.jar" basedir="build" includes="net/**">
+        </jar>
     </target>
     <target name="build_libraries" depends="prepare" description="build native library for the current platform">
         <exec executable="qmake" dir="build">

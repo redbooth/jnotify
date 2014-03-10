@@ -45,26 +45,10 @@ public class JNotify_win32
 {
 	static
 	{
-		try
-		{
-			if (System.getProperty("os.arch").equals("amd64"))
-			{
-				System.loadLibrary("jnotify_64bit");
-			}
-			else
-			{
-				System.loadLibrary("jnotify");
-			}
-		}
-		catch (UnsatisfiedLinkError e)
-		{
-			System.err.println("Error loading library, java.library.path=" + System.getProperty("java.library.path"));
-			throw e;
-		}
 		int res = nativeInit();
 		if (res != 0)
 		{
-			throw new RuntimeException("Error initialiing native library. (#" + res + ")");
+			throw new RuntimeException("Error initializing native library. (#" + res + ")");
 		}
 	}
 	

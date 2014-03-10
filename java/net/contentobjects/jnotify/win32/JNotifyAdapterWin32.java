@@ -65,9 +65,7 @@ public class JNotifyAdapterWin32 implements IJNotify
 		throws JNotifyException
 	{
 		// register to everything on system level.
-		int wd = JNotify_win32.addWatch(path, JNotify_win32.FILE_NOTIFY_CHANGE_SECURITY
-				| JNotify_win32.FILE_NOTIFY_CHANGE_CREATION
-				| JNotify_win32.FILE_NOTIFY_CHANGE_LAST_ACCESS
+		int wd = JNotify_win32.addWatch(path, JNotify_win32.FILE_NOTIFY_CHANGE_CREATION
 				| JNotify_win32.FILE_NOTIFY_CHANGE_LAST_WRITE
 				| JNotify_win32.FILE_NOTIFY_CHANGE_SIZE
 				| JNotify_win32.FILE_NOTIFY_CHANGE_ATTRIBUTES
