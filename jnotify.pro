@@ -10,8 +10,7 @@ macx {
 	INCLUDEPATH += $$PWD/osx
 	INCLUDEPATH += "$$(SDKROOT)/System/Library/Frameworks/JavaVM.framework/Headers"
 	HEADERS += osx/net_contentobjects_jnotify_macosx_JNotify_macosx.h
-	SOURCES += osx/net_contentobjects_jnotify_macosx_JNotifyAdapterMacOSX_JNFile.c \
-	           osx/net_contentobjects_jnotify_macosx_JNotify_macosx.c
+	SOURCES += osx/net_contentobjects_jnotify_macosx_JNotify_macosx.c
 	LIBS += -framework CoreFoundation -framework CoreServices
 }
 win32 {

@@ -2,6 +2,8 @@ package net.contentobjects.jnotify.macosx;
 
 import net.contentobjects.jnotify.JNotifyException;
 
+import static net.contentobjects.jnotify.Util.CHARSET_UTF;
+
 public class JNotify_macosx
 {
 	private static Object initCondition = new Object();
@@ -91,11 +93,11 @@ public class JNotify_macosx
 		return removed;
 	}
 
-	public static void callbackProcessEvent(int wd, String rootPath, String filePath, boolean recurse)
+	public static void callbackProcessEvent(int wd, byte[] filePath, int flags)
 	{
 		if (_eventListener != null)
 		{
-			_eventListener.notifyChange(wd, rootPath, filePath, recurse);
+			_eventListener.notifyChange(wd, new String(filePath, CHARSET_UTF), flags);
 		}
 	}
 

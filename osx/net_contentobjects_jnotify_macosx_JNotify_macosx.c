@@ -9,7 +9,6 @@ struct listnode
   FSEventStreamRef stream;
   jint id;
   struct listnode *next;
-  jobject root;
 };
 
 static struct listnode *streams;
@@ -22,31 +21,23 @@ static CFRunLoopRef runLoop;
 static void fsevent_callback
   (ConstFSEventStreamRef streamRef, void *userData, size_t numEvents, void *eventPaths, const FSEventStreamEventFlags eventFlags[], const FSEventStreamEventId eventIds[])
 {
+  (void)streamRef;
+  (void)eventIds;
   const char **cpaths = (const char **) eventPaths;
   struct listnode *node = (struct listnode *) userData;
   size_t i;
-  jstring jpath;
-  jboolean recursive;
 
   // start batch
   (*loopEnv)->CallVoidMethod(loopEnv, loopClass, loopMethodInBatch, node->id, JNI_TRUE);
 
   for (i = 0; i < numEvents; i++)
   {
-    // these flags mean we need a full rescan
-    if (eventFlags[i] & (kFSEventStreamEventFlagUserDropped | kFSEventStreamEventFlagKernelDropped))
-      jpath = node->root;
-    else
-      jpath = (*loopEnv)->NewStringUTF(loopEnv, cpaths[i]);
-
-    // these flags mean we need to scan recursively
-    if (eventFlags[i] & (kFSEventStreamEventFlagUserDropped | kFSEventStreamEventFlagKernelDropped | kFSEventStreamEventFlagMustScanSubDirs))
-      recursive = JNI_TRUE;
-    else
-      recursive = JNI_FALSE;
+    size_t len = strlen(cpaths[i]);
+    jbyteArray jpath = (*loopEnv)->NewByteArray(loopEnv, len);
+    (*loopEnv)->SetByteArrayRegion(loopEnv, jpath, 0, len, cpaths[i]);
 
     // notify
-    (*loopEnv)->CallVoidMethod(loopEnv, loopClass, loopMethodProcessEvent, node->id, node->root, jpath, recursive);
+    (*loopEnv)->CallVoidMethod(loopEnv, loopClass, loopMethodProcessEvent, node->id, jpath, (jint)eventFlags[i]);
     // we need to delete this here or the JVM will hold the string until the thread exits
     (*loopEnv)->DeleteLocalRef(loopEnv, jpath);
   }
@@ -62,7 +53,7 @@ JNIEXPORT void JNICALL Java_net_contentobjects_jnotify_macosx_JNotify_1macosx_na
   loopEnv = NULL;
   runLoop = CFRunLoopGetCurrent();
 
-  loopMethodProcessEvent = (*env)->GetStaticMethodID(env, clazz, "callbackProcessEvent", "(ILjava/lang/String;Ljava/lang/String;Z)V");
+  loopMethodProcessEvent = (*env)->GetStaticMethodID(env, clazz, "callbackProcessEvent", "(I[BI)V");
   if (loopMethodProcessEvent == NULL)
     return;
 
@@ -74,12 +65,8 @@ JNIEXPORT void JNICALL Java_net_contentobjects_jnotify_macosx_JNotify_1macosx_na
 JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_macosx_JNotify_1macosx_nativeAddWatch
   (JNIEnv *env, jclass clazz, jstring jpath)
 {
+  (void)clazz;
   jint id = 0;
-
-  // we need this later
-  jpath = (*env)->NewGlobalRef(env, jpath);
-  if (jpath == NULL)
-    return id;
 
   // get the path as a CFString
   const jchar *path = (*env)->GetStringChars(env, jpath, NULL);
@@ -90,7 +77,6 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_macosx_JNotify_1macosx_na
   if (cfpath == NULL)
   {
     (*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/OutOfMemoryError"), "Could not allocate CFString");
-    (*env)->DeleteGlobalRef(env, jpath);
     goto nostring;
   }
 
@@ -99,7 +85,6 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_macosx_JNotify_1macosx_na
   if (paths == NULL)
   {
     (*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/OutOfMemoryError"), "Could not allocate CFArray");
-    (*env)->DeleteGlobalRef(env, jpath);
     goto noarray;
   }
 
@@ -108,7 +93,6 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_macosx_JNotify_1macosx_na
   if (node == NULL)
   {
     (*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/OutOfMemoryError"), "Could not allocate listnode");
-    (*env)->DeleteGlobalRef(env, jpath);
     goto nonode;
   }
 
@@ -119,7 +103,6 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_macosx_JNotify_1macosx_na
   {
     (*env)->ThrowNew(env, (*env)->FindClass(env, "net/contentobjects/jnotify/macosx/JNotifyException_macosx"), "Could not create stream");
     free(node);
-    (*env)->DeleteGlobalRef(env, jpath);
     goto nonode;
   }
 
@@ -131,7 +114,6 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_macosx_JNotify_1macosx_na
     FSEventStreamInvalidate(node->stream);
     FSEventStreamRelease(node->stream);
     free(node);
-    (*env)->DeleteGlobalRef(env, jpath);
     goto nonode;
   }
 
@@ -142,7 +124,6 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_macosx_JNotify_1macosx_na
     id++;
   }
   node->id = id;
-  node->root = jpath;
   node->next = *cursor;
   *cursor = node;
 
@@ -157,21 +138,22 @@ nostring:
 JNIEXPORT jboolean JNICALL Java_net_contentobjects_jnotify_macosx_JNotify_1macosx_nativeRemoveWatch
   (JNIEnv *env, jclass clazz, jint wd)
 {
+  (void)env;
+  (void)clazz;
   struct listnode **node = &streams;
-  struct listnode *delete = NULL;
+  struct listnode *deletedNode = NULL;
 
   while (*node != NULL && (*node)->id < wd)
     node = &(*node)->next;
 
   if ((*node)->id == wd)
   {
-    delete = *node;
+    deletedNode = *node;
     *node = (*node)->next;
-    FSEventStreamStop(delete->stream);
-    FSEventStreamInvalidate(delete->stream);
-    FSEventStreamRelease(delete->stream);
-    (*env)->DeleteGlobalRef(env, delete->root);
-    free(delete);
+    FSEventStreamStop(deletedNode->stream);
+    FSEventStreamInvalidate(deletedNode->stream);
+    FSEventStreamRelease(deletedNode->stream);
+    free(deletedNode);
     return JNI_TRUE;
   }
   return JNI_FALSE;
