@@ -64,20 +64,20 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_linux_JNotify_1linux_nati
 /*plog
  * Class:     net_contentobjects_jnotify_linux_JNotify_linux
  * Method:    nativeAddWatch
- * Signature: (Ljava/lang/String;I)I
+ * Signature: ([BI)I
  */
 JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_linux_JNotify_1linux_nativeAddWatch
-  (JNIEnv *env, jclass clazz, jstring path, jint mask)
+  (JNIEnv *env, jclass clazz, jbytearray path, jint mask)
 {
 	const char *str;
-    str = (*env)->GetStringUTFChars(env, path, NULL);
+    str = (*env)->GetByteArrayElements(env, path, NULL);
     if (str == NULL) 
     {
     	return -1; /* OutOfMemoryError already thrown */
     }
     // todo : ERROR HADNLING!
     int wd = add_watch((char*)str, mask);
-    (*env)->ReleaseStringUTFChars(env, path, str);
+    (*env)->ReleaseByteArrayElements(env, path, str);
     
 	return wd;
 }  
@@ -178,6 +178,14 @@ int runLoop(JNIEnv *env, jclass clazz)
 	static int BUF_LEN = 4096;
     char buf[BUF_LEN];    
     int len, i = 0;
+
+    jmethodID mid =   (*env)->GetStaticMethodID(env, clazz, "callbackProcessEvent", "([BIII)V");
+    if (mid == NULL)
+    {
+	    printf("callbackProcessEvent not found! \n");
+		fflush(stdout);
+        return 0;  /* method not found */
+    }
     
 	while (fd != -1)
 	{
@@ -186,7 +194,7 @@ int runLoop(JNIEnv *env, jclass clazz)
 	    while (i < len) 
 	    {
 	        struct inotify_event *event = (struct inotify_event *) &buf[i];
-	       	dispatch(env, clazz, event);
+	       	dispatch(env, clazz, mid, event);
 	        i += sizeof (struct inotify_event) + event->len;
 	    }
 	    i=0;
@@ -196,31 +204,18 @@ int runLoop(JNIEnv *env, jclass clazz)
 	return 0;
 }
 
-void dispatch(JNIEnv *env, jclass clazz, struct inotify_event *event)
+void dispatch(JNIEnv *env, jclass clazz, jmethodID mid, struct inotify_event *event)
 {
-    jstring name;
-	if (event->len)
-	{
-		name = (*env)->NewStringUTF(env, event->name);
+    jbyteArray name = (*env)->NewByteArray(env);
+
+	if (event->len > 0) {
+	    (*env)->SetByteArrayRegion(env, name, 0, event->len, event->name);
 	}
-	else
-	{
-		char nostr[] = {0};
-		name = (*env)->NewStringUTF(env, nostr);
-	}
-	
-     jmethodID mid =   (*env)->GetStaticMethodID(env, clazz, "callbackProcessEvent", "(Ljava/lang/String;III)V");
-     if (mid == NULL) 
-     {
-		 printf("callbackProcessEvent not found! \n");
-		 fflush(stdout);
-         return;  /* method not found */
-     }
      
-     (*env)->CallStaticVoidMethod(env, clazz, mid, name, event->wd, event->mask, event->cookie);
+    (*env)->CallStaticVoidMethod(env, clazz, mid, name, event->wd, event->mask, event->cookie);
 	//callbackProcessEvent(String name, int wd, int mask, int cookie)        	
-     // we need to delete this or Java will hold it until the thread exits
-     (*env)->DeleteLocalRef(env, name);
+    // we need to delete this or Java will hold it until the thread exits
+    (*env)->DeleteLocalRef(env, name);
 }
 
 

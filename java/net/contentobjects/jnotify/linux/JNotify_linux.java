@@ -38,6 +38,8 @@ package net.contentobjects.jnotify.linux;
 
 import net.contentobjects.jnotify.JNotifyException;
 
+import static net.contentobjects.jnotify.Util.CHARSET_UTF;
+
 public class JNotify_linux
 {
 	static final boolean DEBUG = false;
@@ -96,7 +98,7 @@ public class JNotify_linux
 
 	private static native int nativeInit();
 	
-	private static native int nativeAddWatch(String path, int mask);
+	private static native int nativeAddWatch(byte[] path, int mask);
 
 	private static native int nativeRemoveWatch(int wd);
 	
@@ -107,7 +109,7 @@ public class JNotify_linux
 	
 	public static int addWatch(String path, int mask) throws JNotifyException
 	{
-		int wd = nativeAddWatch(path, mask);
+		int wd = nativeAddWatch(path.getBytes(CHARSET_UTF), mask);
 		if (wd < 0)
 		{
 			throw new JNotifyException_linux("Error watching " + path + " : " + getErrorDesc(-wd), -wd);
@@ -137,12 +139,11 @@ public class JNotify_linux
 		thread.start();
 	}
 	
-	
-	static void callbackProcessEvent(String name, int wd, int mask, int cookie)
+	static void callbackProcessEvent(byte[] name, int wd, int mask, int cookie)
 	{
 		if (_notifyListener != null)
 		{
-			_notifyListener.notify(name, wd, mask, cookie);
+			_notifyListener.notify(new String(name, CHARSET_UTF), wd, mask, cookie);
 		}
 	}
 
