@@ -30,8 +30,6 @@
  ******************************************************************************/
 
 
-
-
 #include "net_contentobjects_jnotify_linux_JNotify_linux.h"
 #include <sys/time.h>
 #include <sys/select.h>
@@ -62,7 +60,7 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_linux_JNotify_1linux_nati
 {
     (void)env;
     (void)clazz;
-	return (jint)init();
+    return (jint)init();
 }
 
 /*plog
@@ -82,7 +80,7 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_linux_JNotify_1linux_nati
     char *cpath = (char*)malloc((len + 1) * sizeof(char));
     if (cpath == NULL) return -1;
 
-	jbyte *str = (*env)->GetPrimitiveArrayCritical(env, path, NULL);
+    jbyte *str = (*env)->GetPrimitiveArrayCritical(env, path, NULL);
     if (str == NULL) goto end;
 
     memcpy(cpath, str, len);
@@ -95,7 +93,7 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_linux_JNotify_1linux_nati
 
 end:
     free(cpath);
-	return wd;
+    return wd;
 }
 
 /*
@@ -108,7 +106,7 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_linux_JNotify_1linux_nati
 {
     (void)env;
     (void)clazz;
-	return remove_watch(wd);
+    return remove_watch(wd);
 }
 
 /*
@@ -119,7 +117,7 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_linux_JNotify_1linux_nati
 JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_linux_JNotify_1linux_nativeNotifyLoop
   (JNIEnv *env, jclass clazz)
 {
-	return runLoop(env, clazz);
+    return runLoop(env, clazz);
 }
 
 /**
@@ -136,19 +134,15 @@ int fd = -1;
  */
 int init()
 {
-	if (fd != -1)
-	{
-		return 0;
-	}
-
-    fd = inotify_init ();
-    if (fd < 0)
-    {
-        return errno;
+    if (fd != -1) {
+        return 0;
     }
-    else
-    {
-    	return 0;
+
+    fd = inotify_init();
+    if (fd < 0) {
+        return errno;
+    } else {
+        return 0;
     }
 }
 
@@ -161,11 +155,10 @@ int add_watch(char *path, __u32 mask)
 {
     int wd = inotify_add_watch (fd, path, mask);
     int lastErr = errno;
-	if (wd == -1)
-	{
-		return -lastErr;
-	}
-	return wd;
+    if (wd == -1) {
+        return -lastErr;
+    }
+    return wd;
 }
 
 /**
@@ -179,8 +172,7 @@ int remove_watch(int wd)
 
 void cleanup()
 {
-	if (fd != -1)
-	{
+	if (fd != -1) {
 		if (close(fd) < 0)
 	        perror ("close");
 	}
@@ -188,50 +180,45 @@ void cleanup()
 
 int runLoop(JNIEnv *env, jclass clazz)
 {
-	if (fd == -1)
-	{
-		return 1;
-	}
+    if (fd == -1) {
+        return 1;
+    }
 
-	static int BUF_LEN = 4096;
+    static int BUF_LEN = 4096;
     char buf[BUF_LEN];
     int len, i = 0;
 
     jmethodID mid =   (*env)->GetStaticMethodID(env, clazz, "callbackProcessEvent", "([BIII)V");
-    if (mid == NULL)
-    {
-	    printf("callbackProcessEvent not found! \n");
-		fflush(stdout);
+    if (mid == NULL) {
+        printf("callbackProcessEvent not found! \n");
+        fflush(stdout);
         return 0;  /* method not found */
     }
 
-	while (fd != -1)
-	{
-	    len = read (fd, buf, BUF_LEN);
+    while (fd != -1) {
+        len = read (fd, buf, BUF_LEN);
 
-	    while (i < len)
-	    {
-	        struct inotify_event *event = (struct inotify_event *) &buf[i];
-	       	dispatch(env, clazz, mid, event);
-	        i += sizeof (struct inotify_event) + event->len;
-	    }
-	    i=0;
-	}
+        while (i < len) {
+            struct inotify_event *event = (struct inotify_event *) &buf[i];
+            dispatch(env, clazz, mid, event);
+            i += sizeof (struct inotify_event) + event->len;
+        }
+        i=0;
+    }
 
-
-	return 0;
+    return 0;
 }
 
 void dispatch(JNIEnv *env, jclass clazz, jmethodID mid, struct inotify_event *event)
 {
     size_t len = event->len > 0 ? strlen(event->name) : 0;
     jbyteArray name = (*env)->NewByteArray(env, len);
-	if (len > 0) {
-	    (*env)->SetByteArrayRegion(env, name, 0, len, (jbyte*)event->name);
-	}
+    if (len > 0) {
+        (*env)->SetByteArrayRegion(env, name, 0, len, (jbyte*)event->name);
+    }
 
     (*env)->CallStaticVoidMethod(env, clazz, mid, name, event->wd, event->mask, event->cookie);
-	//callbackProcessEvent(String name, int wd, int mask, int cookie)
+    //callbackProcessEvent(String name, int wd, int mask, int cookie)
     // we need to delete this or Java will hold it until the thread exits
     (*env)->DeleteLocalRef(env, name);
 }
@@ -246,14 +233,11 @@ JNIEXPORT jstring JNICALL Java_net_contentobjects_jnotify_linux_JNotify_1linux_g
   (JNIEnv *env, jclass clazz, jlong errorCode)
 {
     (void)clazz;
-	const char* err;
-	if (errorCode < sys_nerr)
-	{
-		err = sys_errlist[errorCode];
-	}
-	else
-	{
-		err = "Unknown error\0";
-	}
-	return (*env)->NewStringUTF(env, err);
+    const char* err;
+    if (errorCode < sys_nerr) {
+        err = sys_errlist[errorCode];
+    } else {
+        err = "Unknown error\0";
+    }
+    return (*env)->NewStringUTF(env, err);
 }
