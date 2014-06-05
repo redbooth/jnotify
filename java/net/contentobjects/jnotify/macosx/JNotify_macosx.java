@@ -36,7 +36,7 @@ public class JNotify_macosx
 
 	static
 	{
-		Thread thread = new Thread("FSEvent thread") //$NON-NLS-1$
+		Thread thread = new Thread("fs") //$NON-NLS-1$
 		{
 			public void run()
 			{
