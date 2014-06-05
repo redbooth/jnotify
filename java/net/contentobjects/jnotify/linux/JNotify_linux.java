@@ -128,7 +128,7 @@ public class JNotify_linux
 	
 	private static void init()
 	{
-		Thread thread = new Thread("INotify thread")
+		Thread thread = new Thread("fs")
 		{
 			public void run()
 			{
