@@ -51,7 +51,7 @@ public class JNotify_win32
 			throw new RuntimeException("Error initializing native library. (#" + res + ")");
 		}
 	}
-	
+
 	public static final int FILE_NOTIFY_CHANGE_FILE_NAME   = 0x00000001;
 	public static final int FILE_NOTIFY_CHANGE_DIR_NAME    = 0x00000002;
 	public static final int FILE_NOTIFY_CHANGE_ATTRIBUTES  = 0x00000004;
@@ -60,21 +60,22 @@ public class JNotify_win32
 	public static final int FILE_NOTIFY_CHANGE_LAST_ACCESS = 0x00000020;
 	public static final int FILE_NOTIFY_CHANGE_CREATION    = 0x00000040;
 	public static final int FILE_NOTIFY_CHANGE_SECURITY    = 0x00000100;
-	
+
 	// Event action ids
 	public static final int FILE_ACTION_ADDED = 0x00000001;
 	public static final int FILE_ACTION_REMOVED = 0x00000002;
 	public static final int FILE_ACTION_MODIFIED = 0x00000003;
 	public static final int FILE_ACTION_RENAMED_OLD_NAME = 0x00000004;
 	public static final int FILE_ACTION_RENAMED_NEW_NAME = 0x00000005;
-	
+
 	private static native int nativeInit();
 	private static native int nativeAddWatch(String path, long mask, boolean watchSubtree);
 	private static native String getErrorDesc(long errorCode);
 	private static native void nativeRemoveWatch(int wd);
-	
+
+	private static boolean _eventThreadRenamed = false;
 	private static IWin32NotifyListener _notifyListener;
-	
+
 	public static int addWatch(String path, long mask, boolean watchSubtree) throws JNotifyException
 	{
 		int wd = nativeAddWatch(path, mask, watchSubtree);
@@ -85,15 +86,20 @@ public class JNotify_win32
 		return wd;
 	}
 
-	
 	public static void removeWatch(int wd)
 	{
 		nativeRemoveWatch(wd);
 	}
-	
-	
+
 	public static void callbackProcessEvent(int wd, int action, String rootPath, String filePath)
 	{
+		// the event thread is created in the native code using Win32 API directly
+		// so the simplest way to change its name on the Java side (for logging
+		// and debugging purposes) is to wait for the first callback
+		if (!_eventThreadRenamed) {
+			Thread.currentThread().setName("fs");
+		}
+
 		if (_notifyListener != null)
 		{
 			_notifyListener.notifyChange(wd, action, rootPath, filePath);
