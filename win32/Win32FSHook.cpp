@@ -247,7 +247,7 @@ DWORD WINAPI Win32FSHook::mainLoop( LPVOID lpParam )
 	    }
 	    else
 	    {
-	    	log("GetQueuedCompletionStatus returned an error");
+	    	log("GetQueuedCompletionStatus %d", GetLastError());
 	    }
 	}
 	debug("mainLoop exits");

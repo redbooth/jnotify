@@ -73,7 +73,23 @@ void ChangeCallbackImpl(int watchID, int action, const WCHAR* rootPath, const WC
     _env->DeleteLocalRef(jRootPath);
 }
 
+/*
+ * Class:     net_contentobjects_jnotify_win32_JNotify_win32
+ * Method:    nativeInitLogger
+ * Signature: ([B)V
+ */
+JNIEXPORT void JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nativeInitLogger
+  (JNIEnv *env, jclass clazz, jbyteArray path)
+{
+    char *str = (char*)env->GetPrimitiveArrayCritical(path, NULL);
+    if (str != NULL) {
+        initLog(str);
+    } else {
+        // TODO: exception
+    }
 
+    env->ReleasePrimitiveArrayCritical(path, str, JNI_ABORT);
+}
 
 
 /*

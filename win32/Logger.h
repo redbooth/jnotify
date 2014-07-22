@@ -35,6 +35,8 @@
 
 #include <stdio.h>
 
+void initLog(const char *logFile);
+
 void log(const char *format, ...);
 void debug(const char *format, ...);
 

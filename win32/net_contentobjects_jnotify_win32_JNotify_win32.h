@@ -35,6 +35,14 @@ extern "C" {
 #define net_contentobjects_jnotify_win32_JNotify_win32_FILE_ACTION_RENAMED_NEW_NAME 5L
 /*
  * Class:     net_contentobjects_jnotify_win32_JNotify_win32
+ * Method:    nativeInitLogger
+ * Signature: ([B)V
+ */
+JNIEXPORT void JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nativeInitLogger
+  (JNIEnv *, jclass, jbyteArray);
+
+/*
+ * Class:     net_contentobjects_jnotify_win32_JNotify_win32
  * Method:    nativeInit
  * Signature: ()I
  */

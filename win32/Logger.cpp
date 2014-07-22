@@ -30,76 +30,69 @@
  ******************************************************************************/
 
 
-
-
 #include "Logger.h"
 
 #include <stdio.h>
 #include <windows.h>
 #include "Lock.h"
 
+namespace {
+
 Lock _logLoc;
 FILE *logFile = 0;
-bool dbg_stdout = false;
-bool dbg_file = false;
-bool dbg = dbg_file || dbg_stdout;
+
+const bool DEBUG = false;
+const bool LOG = true;
+
+char sbuf[1024];
+
+void _log()
+{
+    if (logFile == 0) return;
+    fputs(sbuf, logFile);
+    fputc('\n', logFile);
+    fflush(logFile);
+}
+
+}
+
+// TODO: rotate log file
+void initLog(const char *path)
+{
+    if (logFile != 0) {
+        fclose(logFile);
+    }
+    logFile = fopen(path, "a");
+}
+
 void debug(const char *format, ...)
 {
-	if (dbg)
-	{
-		_logLoc.lock();
-		static char sbuf[1024];
-	
-		va_list args;
-		va_start(args, format);
-		_vsnprintf(sbuf, 1024, format, args);
-		va_end(args);
-		if (dbg_stdout)
-		{
-			DWORD tid = GetCurrentThreadId();
-			fprintf(stdout, "Win32 [tid=%d]: %s\n",(int)tid,sbuf);
-			fflush(stdout);
-		}
-		else
-		if (dbg_file)
-		{
-			if (dbg_file && logFile == 0)
-			{
-				logFile = fopen("jnotify_win32.log", "w");
-			}
-			fprintf(logFile, "Win32 [tid=%d]: %s\n",(int)GetCurrentThreadId(),sbuf);
-			fflush(logFile);
-		}
-		
-		_logLoc.unlock();
-	}
+    if (!DEBUG) return;
+
+    _logLoc.lock();
+
+    va_list args;
+    va_start(args, format);
+    _vsnprintf(sbuf, 1024, format, args);
+    va_end(args);
+
+    _log();
+
+    _logLoc.unlock();
 }
 
 void log(const char *format, ...)
 {
-	_logLoc.lock();
-	static char sbuf[1024];
+    if (!LOG) return;
 
-	va_list args;
-	va_start(args, format);
-	_vsnprintf(sbuf, 1024, format, args);
-	va_end(args);
+    _logLoc.lock();
 
-	if (dbg_stdout)
-	{
-		fprintf(stdout, "Win32 [tid=%d]: %s\n",(int)GetCurrentThreadId(),sbuf);
-		fflush(stdout);
-	}
-	else
-	if (dbg_file)
-	{
-		if (dbg_file && logFile == 0)
-		{
-			logFile = fopen("jnotify_win32.log", "w");
-		}
-		fprintf(logFile, "Win32 [tid=%d]: %s\n",(int)GetCurrentThreadId(),sbuf);
-		fflush(logFile);
-	}
-	
-	_logLoc.unlock();
+    va_list args;
+    va_start(args, format);
+    _vsnprintf(sbuf, 1024, format, args);
+    va_end(args);
+
+    _log();
+
+    _logLoc.unlock();
 }
