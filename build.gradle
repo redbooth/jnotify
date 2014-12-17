@@ -1,0 +1,41 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'com.aerofs'
+archivesBaseName = 'jnotify'
+version = '0.95'
+
+compileJava {
+    options.compilerArgs << '-Werror'
+    options.compilerArgs << '-Xlint:all'
+}
+
+javadoc {
+    options.links 'http://docs.oracle.com/javase/6/docs/api/'
+}
+
+task sourceJar(type: Jar, description: "Assembles a jar archive containing the source files") {
+    from sourceSets.main.allJava
+    classifier = 'sources'
+}
+
+task javadocJar(type: Jar, description: "Assembles a jar archive containing the javadoc files", dependsOn: javadoc) {
+    from "$docsDir"
+    classifier = 'javadoc'
+}
+
+artifacts {
+    archives sourceJar, javadocJar
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "${nexusRepo}/nexus/content/repositories/releases") {
+                authentication(userName: nexusUser, password: nexusPass)
+            }
+            pom.artifactId = 'jnotify'
+        }
+    }
+}
+
