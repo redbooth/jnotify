@@ -46,10 +46,10 @@ JavaVM *_jvm = 0;
 
 enum INIT_STATE
 {
-	NOT_INITIALIZED,
-	INITIALIZED,
-	ATTACHED,
-	FAILED
+    NOT_INITIALIZED,
+    INITIALIZED,
+    ATTACHED,
+    FAILED
 } _initialized = NOT_INITIALIZED;
 
 JNIEnv *_env = 0;
@@ -58,19 +58,16 @@ jmethodID _callback = 0;
 
 void getErrorDescription(int errorCode, WCHAR *buffer, int len);
 
-void ChangeCallbackImpl(int watchID, int action, const WCHAR* rootPath, const WCHAR* filePath)
+void ChangeCallbackImpl(int watchID, int action, const WCHAR* filePath, int len)
 {
-    if (_initialized == INITIALIZED)
-    {
+    if (_initialized == INITIALIZED) {
         _jvm->AttachCurrentThreadAsDaemon((void **)&_env, NULL);
         _initialized = ATTACHED;
     }
-    jstring jRootPath = _env->NewString((jchar*)rootPath, wcslen(rootPath));
-    jstring jFilePath = _env->NewString((jchar*)filePath, wcslen(filePath));
-	_env->CallStaticVoidMethod(_clazz, _callback, watchID, action, jRootPath, jFilePath);
+    jstring jFilePath = _env->NewString((jchar*)filePath, len);
+    _env->CallStaticVoidMethod(_clazz, _callback, watchID, action, jFilePath);
     // we need to delete these or Java will hold them until the thread exits
     _env->DeleteLocalRef(jFilePath);
-    _env->DeleteLocalRef(jRootPath);
 }
 
 /*
@@ -79,11 +76,12 @@ void ChangeCallbackImpl(int watchID, int action, const WCHAR* rootPath, const WC
  * Signature: ([B)V
  */
 JNIEXPORT void JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nativeInitLogger
-  (JNIEnv *env, jclass clazz, jbyteArray path)
+  (JNIEnv *env, jclass clazz, jbyteArray path, jboolean debug)
 {
+    (void)clazz;
     char *str = (char*)env->GetPrimitiveArrayCritical(path, NULL);
     if (str != NULL) {
-        initLog(str);
+        initLog(str, debug == JNI_TRUE);
     } else {
         // TODO: exception
     }
@@ -100,79 +98,66 @@ JNIEXPORT void JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nati
 JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nativeInit
   (JNIEnv *env, jclass clazz)
 {
-	static Lock lock;
-	lock.lock();
-	if (_initialized == NOT_INITIALIZED)
-	{
-		bool failed = false;
-		char className[] = "net/contentobjects/jnotify/win32/JNotify_win32";
-		_clazz = env->FindClass(className);
-		if (_clazz == NULL)
-		{
-			log("class %s not found ", className);
-			failed = true;
-		}
-                _clazz = (jclass) env->NewGlobalRef(_clazz);
-		
-		if (!failed)
-		{
-		    _callback = env->GetStaticMethodID(_clazz, "callbackProcessEvent", "(IILjava/lang/String;Ljava/lang/String;)V");
-		    if (_callback == NULL) 
-		    {
-				log("callbackProcessEvent not found");
-				failed = true;
-		    }
-		}
-	    
-	    if (!failed)
-	    {
-	    	_initialized = INITIALIZED;
-	    }
-	    else
-	    {
-	    	_initialized = FAILED;
-	    }
-	}
-	lock.unlock();
-	if (_initialized != INITIALIZED) return -1;
+    (void)clazz;
+    static Lock lock;
+    lock.lock();
+    if (_initialized == NOT_INITIALIZED) {
+        bool failed = false;
+        char className[] = "net/contentobjects/jnotify/win32/JNotify_win32";
+        _clazz = env->FindClass(className);
+        if (_clazz == NULL) {
+            log("class %s not found ", className);
+            failed = true;
+        }
+        _clazz = (jclass) env->NewGlobalRef(_clazz);
+        
+        if (!failed) {
+            _callback = env->GetStaticMethodID(_clazz, "callbackProcessEvent", "(IILjava/lang/String;)V");
+            if (_callback == NULL) {
+                log("callbackProcessEvent not found");
+                failed = true;
+            }
+        }
+        
+        if (!failed) {
+            _initialized = INITIALIZED;
+        } else {
+            _initialized = FAILED;
+        }
+    }
+    lock.unlock();
+    if (_initialized != INITIALIZED) return -1;
 
-	try
-	{
-		_win32FSHook = new Win32FSHook();
-		_win32FSHook->init(&ChangeCallbackImpl);
-		return 0;
-	}
-	catch (int err)
-	{
-		return err;
-	}
+    try {
+        _win32FSHook = new Win32FSHook();
+        _win32FSHook->init(&ChangeCallbackImpl);
+        return 0;
+    } catch (int err) {
+        return err;
+    }
 }
 
 /*
  * Class:     net_contentobjects_fshook_win32_Win32FSHook
  * Method:    nativeAddWatch
- * Signature: (Ljava/lang/String;JZ)I
+ * Signature: (Ljava/lang/String;IZ)I
  */
 JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nativeAddWatch
-  (JNIEnv *env, jclass clazz, jstring path, jlong notifyFilter, jboolean watchSubdir)
+  (JNIEnv *env, jclass clazz, jstring path, jint notifyFilter, jboolean watchSubdir)
 {
-	
-	const WCHAR *cstr = (const WCHAR*)env->GetStringChars(path, NULL);
-    if (cstr == NULL) 
-    {
-    	return -1; /* OutOfMemoryError already thrown */
+    (void)clazz;
+    const WCHAR *cstr = (const WCHAR*)env->GetStringChars(path, NULL);
+    if (cstr == NULL)  {
+        return -1; /* OutOfMemoryError already thrown */
     }
     DWORD error = 0;
-	int watchId = _win32FSHook->add_watch(cstr, notifyFilter, watchSubdir == JNI_TRUE, error);
-	env->ReleaseStringChars(path, (const jchar*)cstr);
-	if (watchId == 0)
-	{
-		return -(jint)(error);
-	}
-	else
-	{
-		return watchId;
-	}
+    int watchId = _win32FSHook->add_watch(cstr, notifyFilter, watchSubdir == JNI_TRUE, error);
+    env->ReleaseStringChars(path, (const jchar*)cstr);
+    if (watchId == 0) {
+        return -(jint)(error);
+    } else {
+        return watchId;
+    }
 }
 
 /*
@@ -183,54 +168,57 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nati
 JNIEXPORT void JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nativeRemoveWatch
   (JNIEnv *env, jclass clazz, jint watchId)
 {
-	_win32FSHook->remove_watch(watchId);
+    (void)env;
+    (void)clazz;
+    _win32FSHook->remove_watch(watchId);
 }
 
 /*
  * Class:     net_contentobjects_fshook_win32_Win32FSHook
  * Method:    getErrorDesc
- * Signature: (J)Ljava/lang/String;
+ * Signature: (I)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_getErrorDesc
-  (JNIEnv *env, jclass clazz, jlong errorCode)
+  (JNIEnv *env, jclass clazz, jint errorCode)
 {
-	WCHAR buffer[1024];
-	getErrorDescription(errorCode, buffer, sizeof(buffer) / sizeof(WCHAR));
-	return env->NewString((jchar*)buffer, wcslen(buffer));
+    (void)clazz;
+    WCHAR buffer[1024];
+    getErrorDescription(errorCode, buffer, sizeof(buffer) / sizeof(WCHAR));
+    return env->NewString((jchar*)buffer, wcslen(buffer));
 }
 
 void getErrorDescription(int errorCode, WCHAR *buffer, int len)
 {
-	static Lock lock;
-	lock.lock();
-	
-	LPVOID lpMsgBuf;
-	FormatMessageW( 
-	    FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-	    FORMAT_MESSAGE_FROM_SYSTEM | 
-	    FORMAT_MESSAGE_IGNORE_INSERTS,
-	    NULL,
-	    errorCode,
-	    0, // Default language
-	    (LPWSTR) &lpMsgBuf,
-	    0,
-	    NULL 
-	);
+    static Lock lock;
+    lock.lock();
+    
+    LPVOID lpMsgBuf;
+    FormatMessageW( 
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+        FORMAT_MESSAGE_FROM_SYSTEM | 
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        errorCode,
+        0, // Default language
+        (LPWSTR) &lpMsgBuf,
+        0,
+        NULL 
+    );
 
-	_snwprintf(buffer, len, L"Error %d : %s", errorCode, (LPCTSTR)lpMsgBuf);
-	int len1 = wcslen(buffer);
-	if (len1 >= 2)
-	{
-		buffer[len1 - 2] = '\0';
-	}
-	
-	LocalFree( lpMsgBuf );
-	
-	lock.unlock();
+    _snwprintf(buffer, len, L"Error %d : %s", errorCode, (LPCTSTR)lpMsgBuf);
+    int len1 = wcslen(buffer);
+    if (len1 >= 2) {
+        buffer[len1 - 2] = '\0';
+    }
+    
+    LocalFree( lpMsgBuf );
+    
+    lock.unlock();
 }
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
-	_jvm = jvm;
-	return JNI_VERSION_1_2;
+    (void)reserved;
+    _jvm = jvm;
+    return JNI_VERSION_1_2;
 }

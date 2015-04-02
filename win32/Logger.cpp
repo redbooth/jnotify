@@ -32,6 +32,7 @@
 
 #include "Logger.h"
 
+#include <ctime>
 #include <stdio.h>
 #include <windows.h>
 #include "Lock.h"
@@ -41,14 +42,17 @@ namespace {
 Lock _logLoc;
 FILE *logFile = 0;
 
-const bool DEBUG = false;
-const bool LOG = true;
+bool LOG = false;
+bool DEBUG = false;
 
 char sbuf[1024];
 
 void _log()
 {
-    if (logFile == 0) return;
+    SYSTEMTIME t;
+    GetSystemTime(&t);
+    fprintf(logFile, "[%04d-%02d-%02d %02d:%02d:%02d,%03d] ",
+            t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, t.wMilliseconds);
     fputs(sbuf, logFile);
     fputc('\n', logFile);
     fflush(logFile);
@@ -57,12 +61,14 @@ void _log()
 }
 
 // TODO: rotate log file
-void initLog(const char *path)
+void initLog(const char *path, bool debug)
 {
     if (logFile != 0) {
         fclose(logFile);
     }
     logFile = fopen(path, "a");
+    LOG = logFile != 0;
+    DEBUG = debug && LOG;
 }
 
 void debug(const char *format, ...)

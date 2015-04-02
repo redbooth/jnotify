@@ -29,8 +29,6 @@
  * Author : Omry Yadan
  ******************************************************************************/
 
- 
-
 #include "WatchData.h"
 #include "Logger.h"
 
@@ -42,70 +40,59 @@ WatchData::WatchData()
 
 WatchData::~WatchData()
 {
-	if (_path != NULL) free(_path);
-	_hDir = 0;
+    if (_path != NULL) free(_path);
+    _hDir = 0;
 }
 
 WatchData::WatchData(const WCHAR* path, int mask, bool watchSubtree, HANDLE completionPort)
-	:
-	_watchId(++_counter), 
-	_mask(mask), 
-	_watchSubtree(watchSubtree),
-	_byteReturned(0),
-	_completionPort(completionPort)
+    :
+    _watchId(++_counter), 
+    _mask(mask), 
+    _watchSubtree(watchSubtree),
+    _byteReturned(0),
+    _completionPort(completionPort)
 {
-	_path = _wcsdup(path); 
-	_hDir = CreateFileW(_path,
-						 FILE_LIST_DIRECTORY | GENERIC_READ,
-						 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-						 NULL, //security attributes
-						 OPEN_EXISTING,
-						 FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
-	if(_hDir == INVALID_HANDLE_VALUE )	
-	{
-		throw GetLastError();
-	}
-	
-	if (NULL == CreateIoCompletionPort(_hDir, _completionPort, (ULONG_PTR)_watchId, 0))
-	{
-		throw GetLastError();
-	}
+    _path = _wcsdup(path); 
+    _hDir = CreateFileW(_path,
+                        FILE_LIST_DIRECTORY | GENERIC_READ,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                        NULL, //security attributes
+                        OPEN_EXISTING,
+                        FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
+    if (_hDir == INVALID_HANDLE_VALUE) {
+        throw GetLastError();
+    }
+    
+    if (NULL == CreateIoCompletionPort(_hDir, _completionPort, (ULONG_PTR)_watchId, 0)) {
+        throw GetLastError();
+    }
 }
 
 int WatchData::unwatchDirectory()
 {
-	int c = CancelIo(_hDir);
-	if (_hDir != INVALID_HANDLE_VALUE) CloseHandle(_hDir);
-	if (c == 0)
-	{
-		return GetLastError();
-	}
-	else
-	{
-		return 0;
-	}
+    int c = CancelIo(_hDir);
+    if (_hDir != INVALID_HANDLE_VALUE) CloseHandle(_hDir);
+    if (c == 0) {
+        return GetLastError();
+    } else {
+        return 0;
+    }
 }
 
 int WatchData::watchDirectory()
 {
-	memset(_buffer, 0, sizeof(_buffer));
-	memset(&_overLapped, 0, sizeof(_overLapped));
-	if( !ReadDirectoryChangesW( _hDir,
-		 					    _buffer,//<--FILE_NOTIFY_INFORMATION records are put into this buffer
-								sizeof(_buffer),
-								_watchSubtree,
-								_mask,
-								&_byteReturned,
-								&_overLapped,
-								NULL))
-
-
-
-	{
-		return GetLastError();
-	}
-	else
-	{
-		return 0;
-	}
+    memset(_buffer, 0, sizeof(_buffer));
+    memset(&_overLapped, 0, sizeof(_overLapped));
+    if (!ReadDirectoryChangesW(_hDir,
+                               _buffer,//<--FILE_NOTIFY_INFORMATION records are put into this buffer
+                               sizeof(_buffer),
+                               _watchSubtree,
+                               _mask,
+                               &_byteReturned,
+                               &_overLapped,
+                               NULL)) {
+        return GetLastError();
+    } else {
+        return 0;
+    }
 }

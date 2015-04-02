@@ -69,22 +69,23 @@ public class JNotify_win32
     public static final int FILE_ACTION_MODIFIED = 0x00000003;
     public static final int FILE_ACTION_RENAMED_OLD_NAME = 0x00000004;
     public static final int FILE_ACTION_RENAMED_NEW_NAME = 0x00000005;
+    public static final int FILE_ACTION_QUEUE_OVERFLOW   = -1;
 
-    private static native void nativeInitLogger(byte[] path);
+    private static native void nativeInitLogger(byte[] path, boolean debug);
     private static native int nativeInit();
-    private static native int nativeAddWatch(String path, long mask, boolean watchSubtree);
-    private static native String getErrorDesc(long errorCode);
+    private static native int nativeAddWatch(String path, int mask, boolean watchSubtree);
+    private static native String getErrorDesc(int errorCode);
     private static native void nativeRemoveWatch(int wd);
 
     private static boolean _eventThreadRenamed = false;
     private static IWin32NotifyListener _notifyListener;
 
-    public static void initLogger(String path)
+    public static void initLogger(String path, boolean debug)
     {
-        nativeInitLogger(path.getBytes(CHARSET_UTF));
+        nativeInitLogger(path.getBytes(CHARSET_UTF), debug);
     }
 
-    public static int addWatch(String path, long mask, boolean watchSubtree) throws JNotifyException
+    public static int addWatch(String path, int mask, boolean watchSubtree) throws JNotifyException
     {
         int wd = nativeAddWatch(path, mask, watchSubtree);
         if (wd < 0) {
@@ -98,7 +99,7 @@ public class JNotify_win32
         nativeRemoveWatch(wd);
     }
 
-    public static void callbackProcessEvent(int wd, int action, String rootPath, String filePath)
+    public static void callbackProcessEvent(int wd, int action, String filePath)
     {
         // the event thread is created in the native code using Win32 API directly
         // so the simplest way to change its name on the Java side (for logging
@@ -108,7 +109,7 @@ public class JNotify_win32
         }
 
         if (_notifyListener != null) {
-            _notifyListener.notifyChange(wd, action, rootPath, filePath);
+            _notifyListener.notifyChange(wd, action, filePath);
         }
     }
 
