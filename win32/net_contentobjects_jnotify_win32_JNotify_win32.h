@@ -36,10 +36,10 @@ extern "C" {
 /*
  * Class:     net_contentobjects_jnotify_win32_JNotify_win32
  * Method:    nativeInitLogger
- * Signature: ([B)V
+ * Signature: ([BZ)V
  */
 JNIEXPORT void JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nativeInitLogger
-  (JNIEnv *, jclass, jbyteArray);
+  (JNIEnv *, jclass, jbyteArray, jboolean);
 
 /*
  * Class:     net_contentobjects_jnotify_win32_JNotify_win32
@@ -52,18 +52,18 @@ JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nati
 /*
  * Class:     net_contentobjects_jnotify_win32_JNotify_win32
  * Method:    nativeAddWatch
- * Signature: (Ljava/lang/String;JZ)I
+ * Signature: (Ljava/lang/String;IZ)I
  */
 JNIEXPORT jint JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_nativeAddWatch
-  (JNIEnv *, jclass, jstring, jlong, jboolean);
+  (JNIEnv *, jclass, jstring, jint, jboolean);
 
 /*
  * Class:     net_contentobjects_jnotify_win32_JNotify_win32
  * Method:    getErrorDesc
- * Signature: (J)Ljava/lang/String;
+ * Signature: (I)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_net_contentobjects_jnotify_win32_JNotify_1win32_getErrorDesc
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jclass, jint);
 
 /*
  * Class:     net_contentobjects_jnotify_win32_JNotify_win32

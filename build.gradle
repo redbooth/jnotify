@@ -3,7 +3,7 @@ apply plugin: 'maven'
 
 group = 'com.aerofs'
 archivesBaseName = 'jnotify'
-version = '0.95'
+version = '0.96'
 
 compileJava {
     options.compilerArgs << '-Werror'

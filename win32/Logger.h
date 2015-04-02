@@ -35,7 +35,7 @@
 
 #include <stdio.h>
 
-void initLog(const char *logFile);
+void initLog(const char *logFile, bool debug);
 
 void log(const char *format, ...);
 void debug(const char *format, ...);

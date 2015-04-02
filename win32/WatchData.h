@@ -29,8 +29,6 @@
  * Author : Omry Yadan
  ******************************************************************************/
 
-
-
 #ifndef WATCHDATA_H_
 #define WATCHDATA_H_
 
@@ -41,38 +39,35 @@
 
 using namespace std;
 
-typedef void(*ChangeCallback)(int watchID, int action, const WCHAR* rootPath, const WCHAR* filePath);
+typedef void(*ChangeCallback)(int watchID, int action, const WCHAR* filePath, int len);
 
 class WatchData
 {
-private:	
-	static int _counter;
-	WCHAR* _path;
-	int _watchId;
-	HANDLE _hDir;
-	int _mask;
-	bool _watchSubtree;
-	DWORD _byteReturned;
-	OVERLAPPED _overLapped;
-	char _buffer[8196];
-	HANDLE _completionPort;
+private:
+    static int _counter;
+
+    bool _watchSubtree;
+    int _watchId;
+    int _mask;
+    DWORD _byteReturned;
+    WCHAR* _path;
+    HANDLE _hDir;
+    HANDLE _completionPort;
+    OVERLAPPED _overLapped;
+    char _buffer[8196];
 public:
-	WatchData();
-	WatchData(const WCHAR* path, int mask, bool watchSubtree, HANDLE completionPort);
-	virtual ~WatchData();
-	
-	const char* getBuffer(){ return _buffer;}
-//	FILE_NOTIFY_INFORMATION* getNotifyInfo(){return _notifyInfo;}
-	const int getBufferSize() {return sizeof(_buffer);}
-//	const DWORD getBytesReturned() {return _byteReturned;}
-	const WCHAR* getPath() {return _path;}
-	const int getId() {return _watchId;}
-//	const HANDLE getDirHandle() {return _hDir;}
-//	const int getMask() {return _mask;}
-	int watchDirectory();
-	
-	// cancel pending watch on the hDir, returns 0 if okay or errorCode otherwise.
-	int unwatchDirectory();
+    WatchData();
+    WatchData(const WCHAR* path, int mask, bool watchSubtree, HANDLE completionPort);
+    virtual ~WatchData();
+    
+    const char* getBuffer(){ return _buffer;}
+    const int getBufferSize() {return sizeof(_buffer);}
+    const WCHAR* getPath() {return _path;}
+    const int getId() {return _watchId;}
+    int watchDirectory();
+    
+    // cancel pending watch on the hDir, returns 0 if okay or errorCode otherwise.
+    int unwatchDirectory();
 };
 
 #endif /*WATCHDATA_H_*/

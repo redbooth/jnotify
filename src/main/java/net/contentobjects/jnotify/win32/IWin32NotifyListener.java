@@ -38,5 +38,5 @@ package net.contentobjects.jnotify.win32;
 
 public interface IWin32NotifyListener
 {
-	public void notifyChange(int wd, int action, String rootPath, String filePath);
+    void notifyChange(int wd, int action, String filePath);
 }
