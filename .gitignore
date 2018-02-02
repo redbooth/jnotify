@@ -1,2 +1,5 @@
+.gradle
+Makefile
+*.o
 gradle.properties
 build
