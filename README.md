@@ -26,19 +26,6 @@ application to determine when and how to do that.
 
 The name of the native libraries was changed to reflect the incompatibility.
 
-## Build native code
-
-You need `qmake` which is part of [Qt](https://www.qt.io) (4 or 5).
-
-```
-qmake && make
-```
-
-Note that this does *not* cross-compile, so you need to run this command on every supported
-platform you want to build native code for (Linux, macOS, Windows).
-
-Build output can be removed with `make clean` or `make distclean`
-
 ## Build JAR
 
 The following command will build the main jar (no sources or javadocs) and place it in `build/libs`
@@ -46,6 +33,22 @@ The following command will build the main jar (no sources or javadocs) and place
 ```
 gradle jar
 ```
+
+## Build native code
+
+You need the `qmake` build tool from [Qt 5](https://www.qt.io).
+
+```
+qmake && make && make clean
+```
+
+NB: this does *not* cross-compile, so you need to run this command on every supported
+platform you want to build native code for (Linux, macOS, Windows).
+
+NB: on Windows you may need to use `nmake` instead, if your Qt installation is configured to
+use MSVC instead of MinGW.
+
+Native libraries are placed in the `native` folder.
 
 ## Deploy to Nexus/Maven
 
