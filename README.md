@@ -21,6 +21,9 @@ This fork is *not* a drop-in replacement.
 To make the best out of each platform-specific API, the simplified platform-agnostic
 abstraction layer was dropped to ease maintenance.
 
+The JAR no longer automatically loads the native libraries. It is up to the calling
+application to determine when and how to do that.
+
 The name of the native libraries was changed to reflect the incompatibility.
 
 ## Build native code
