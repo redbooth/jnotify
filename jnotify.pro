@@ -12,6 +12,7 @@ macx {
 	HEADERS += osx/net_contentobjects_jnotify_macosx_JNotify_macosx.h
 	SOURCES += osx/net_contentobjects_jnotify_macosx_JNotify_macosx.c
 	LIBS += -framework CoreFoundation -framework CoreServices
+    DESTDIR = native/osx
 }
 win32 {
 	QMAKE_CXXFLAGS += -DUNICODE -D_UNICODE
@@ -22,16 +23,17 @@ win32 {
 	           win32/Lock.h                                           \
 	           win32/Logger.h                                         \
 	           win32/WatchData.h                                      \
-	           win32/Win32FSHook.h                                    \
+	           win32/Win32FSHook.h
 
 	SOURCES += win32/net_contentobjects_jnotify_win32_JNotify_win32.cpp \
 	           win32/Lock.cpp                                           \
 	           win32/Logger.cpp                                         \
 	           win32/WatchData.cpp                                      \
-	           win32/Win32FSHook.cpp                                    \
+	           win32/Win32FSHook.cpp
 
+    DESTDIR = native/win
 }
-linux-g++ {
+linux-* {
 	DEFINES += "_FILE_OFFSET_BITS=64"
 	INCLUDEPATH += $$PWD/linux
 	INCLUDEPATH += "$$(JAVA_HOME)/include"
@@ -39,4 +41,9 @@ linux-g++ {
 	HEADERS += linux/inotify-syscalls.h \
 	           linux/net_contentobjects_jnotify_linux_JNotify_linux.h
 	SOURCES += linux/net_contentobjects_jnotify_linux_JNotify_linux.c
+    *-64 {
+        DESTDIR = native/linux/amd64
+    } else {
+        DESTDIR = native/linux/i386
+    }
 }
